@@ -13,6 +13,7 @@ class _LoginState extends State<Login> {
   final _formKey = GlobalKey<FormState>();
   final _usernameCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
+  bool _loading = false;
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +29,7 @@ class _LoginState extends State<Login> {
                   "Login",
                   style: TextStyle(fontSize: 22, fontWeight: FontWeight.w500),
                 ),
-                SizedBox(height: 50),
+                const SizedBox(height: 50),
                 Center(
                   child: Form(
                     key: _formKey,
@@ -37,9 +38,9 @@ class _LoginState extends State<Login> {
                       child: Column(
                         children: [
                           _usernameTextField(),
-                          SizedBox(height: 20),
+                          const SizedBox(height: 20),
                           _passwordTextField(),
-                          SizedBox(height: 40),
+                          const SizedBox(height: 40),
                           _tombolLogin(),
                         ],
                       ),
@@ -75,31 +76,31 @@ class _LoginState extends State<Login> {
       child: ElevatedButton(
         child: const Text("Login"),
         onPressed: () async {
-          String username = _usernameCtrl.text;
-          String password = _passwordCtrl.text;
-          bool value = await LoginService().login(username, password);
+          if (_loading) return;
+          setState(() => _loading = true);
+          try {
+            String username = _usernameCtrl.text.trim();
+            String password = _passwordCtrl.text.trim();
+            bool value = await LoginService().login(username, password);
 
-          if (value == true) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => const Beranda()),
-            );
-          } else {
-            final alertDialog = AlertDialog(
-              content: const Text("Username atau Password Tidak Valid"),
-              actions: [
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-                  child: const Text("OK"),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                  ),
+            if (value == true) {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const Beranda()),
+              );
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Username atau Password Tidak Valid'),
                 ),
-              ],
-            );
-            showDialog(context: context, builder: (context) => alertDialog);
+              );
+            }
+          } catch (e) {
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text('Terjadi error: $e')));
+          } finally {
+            if (mounted) setState(() => _loading = false);
           }
         },
       ),

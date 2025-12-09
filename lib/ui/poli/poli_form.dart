@@ -1,37 +1,21 @@
 import 'package:flutter/material.dart';
-import '../model/poli.dart';
-import '../service/poli_service.dart';
+import '../../model/poli.dart';
+import '../../service/poli_service.dart';
 import 'poli_detail.dart';
 
-class PoliUpdateForm extends StatefulWidget {
-  final Poli poli;
-
-  const PoliUpdateForm({Key? key, required this.poli}) : super(key: key);
-  _PoliUpdateFormState createState() => _PoliUpdateFormState();
+class PoliForm extends StatefulWidget {
+  const PoliForm({Key? key}) : super(key: key);
+  _PoliFormState createState() => _PoliFormState();
 }
 
-class _PoliUpdateFormState extends State<PoliUpdateForm> {
+class _PoliFormState extends State<PoliForm> {
   final _formKey = GlobalKey<FormState>();
   final _namaPoliCtrl = TextEditingController();
-
-  Future<Poli> getData() async {
-    Poli data = await PoliService().getById(widget.poli.id.toString());
-    setState(() {
-      _namaPoliCtrl.text = data.namaPoli!;
-    });
-    return data;
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    getData();
-  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Ubah Poli")),
+      appBar: AppBar(title: const Text("Tambah Poli")),
       body: SingleChildScrollView(
         child: Form(
           key: _formKey,
@@ -54,16 +38,15 @@ class _PoliUpdateFormState extends State<PoliUpdateForm> {
     return ElevatedButton(
       onPressed: () async {
         Poli poli = new Poli(namaPoli: _namaPoliCtrl.text);
-        String id = widget.poli.id.toString();
-        await PoliService().ubah(poli, id).then((value) {
-          Navigator.pop(context);
+
+        await PoliService().simpan(poli).then((value) {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (context) => PoliDetail(poli: value)),
           );
         });
       },
-      child: const Text("Simpan Perubahan"),
+      child: const Text("Simpan"),
     );
   }
 }
