@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'beranda.dart';
 import '../service/login_service.dart';
+import '../helpers/user_info.dart';
+import '../helpers/jsonbin_config.dart';
 
 class Login extends StatefulWidget {
   const Login({Key? key}) : super(key: key);
@@ -84,6 +86,20 @@ class _LoginState extends State<Login> {
             bool value = await LoginService().login(username, password);
 
             if (value == true) {
+              // Try to get role from JsonbinService if available
+              final service = await JsonbinConfig.getService();
+              if (service != null) {
+                try {
+                  final user = await service.getUserByUsername(username);
+                  if (user != null && user.containsKey('role')) {
+                    await UserInfo().setUserRole(user['role'].toString());
+                  }
+                } catch (e) {
+                  // If JsonbinService fails, keep the role from LoginService
+                  print('Failed to fetch role from JsonbinService: $e');
+                }
+              }
+
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (context) => const Beranda()),

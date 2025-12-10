@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../helpers/user_info.dart';
+import 'jsonbin_service.dart';
+import '../helpers/jsonbin_config.dart';
 
 /// LoginService can either use a MockAPI endpoint (provide baseUrl)
 /// or fall back to the original hardcoded admin/admin behavior when
@@ -16,6 +18,35 @@ class LoginService {
   ///   "user": { "id": "1", "username": "admin", "role": "pegawai" }
   /// }
   Future<bool> login(String username, String password) async {
+    // First, try JSONBin if configured
+    try {
+      final binId = await JsonbinConfig.getBinId();
+      final masterKey = await JsonbinConfig.getMasterKey();
+      if (binId != null &&
+          masterKey != null &&
+          binId.isNotEmpty &&
+          masterKey.isNotEmpty) {
+        final jsonbinService = JsonbinService(
+          binId: binId,
+          masterKey: masterKey,
+        );
+        final user = await jsonbinService.getUserByUsername(username);
+        if (user != null) {
+          final pwd = user['password']?.toString() ?? '';
+          if (pwd == password) {
+            await UserInfo().setToken('jsonbin_token_${user['id']}');
+            await UserInfo().setUserID(user['id']?.toString() ?? '');
+            await UserInfo().setUsername(user['username']?.toString() ?? '');
+            await UserInfo().setUserRole(user['role']?.toString() ?? 'pasien');
+            return true;
+          }
+          return false;
+        }
+      }
+    } catch (e) {
+      print('JSONBin login failed: $e');
+    }
+
     // Fallback: keep the original hardcoded admin/admin for local testing
     if (baseUrl == null) {
       if (username == 'admin' && password == 'admin') {
